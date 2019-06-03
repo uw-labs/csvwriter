@@ -4,7 +4,7 @@
 
 // +build gofuzz
 
-package csv
+package csvwriter
 
 import (
 	"bytes"
