@@ -43,7 +43,7 @@ var writeTests = []struct {
 func TestWrite(t *testing.T) {
 	for n, tt := range writeTests {
 		b := &bytes.Buffer{}
-		f := NewWriter(b)
+		f := NewWriter(b, 1024)
 		err := writeAll(f, tt.Input)
 		if err != tt.Error {
 			t.Errorf("Unexpected error:\ngot  %v\nwant %v", err, tt.Error)
@@ -57,7 +57,11 @@ func TestWrite(t *testing.T) {
 
 func writeAll(w *Writer, input [][]string) error {
 	for _, in := range input {
-		if err := w.Write(in); err != nil {
+		inBytes := make([][]byte, len(in))
+		for i, str := range in {
+			inBytes[i] = []byte(str)
+		}
+		if err := w.Write(inBytes); err != nil {
 			return err
 		}
 	}
@@ -72,16 +76,16 @@ func (e errorWriter) Write(b []byte) (int, error) {
 
 func TestError(t *testing.T) {
 	b := &bytes.Buffer{}
-	f := NewWriter(b)
-	f.Write([]string{"abc"})
+	f := NewWriter(b, 1024)
+	f.Write([][]byte{[]byte("abc")})
 	err := f.Flush()
 
 	if err != nil {
 		t.Errorf("Unexpected error: %s\n", err)
 	}
 
-	f = NewWriter(errorWriter{})
-	f.Write([]string{"abc"})
+	f = NewWriter(errorWriter{}, 1024)
+	f.Write([][]byte{[]byte("abc")})
 	err = f.Flush()
 
 	if err == nil {

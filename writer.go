@@ -6,8 +6,8 @@ package csvwriter
 
 import (
 	"bufio"
+	"bytes"
 	"io"
-	"strings"
 	"unicode"
 	"unicode/utf8"
 )
@@ -38,7 +38,7 @@ func NewWriter(w io.Writer, bufferSize int) *Writer {
 // A record is a slice of strings with each string being one field.
 // Writes are buffered, so Flush must eventually be called to ensure
 // that the record is written to the underlying io.Writer.
-func (w *Writer) Write(record []string) error {
+func (w *Writer) Write(record [][]byte) error {
 
 	for n, field := range record {
 		if n > 0 {
@@ -50,7 +50,7 @@ func (w *Writer) Write(record []string) error {
 		// If we don't have to have a quoted field then just
 		// write out the field and continue to the next field.
 		if !w.fieldNeedsQuotes(field) {
-			if _, err := w.w.WriteString(field); err != nil {
+			if _, err := w.w.Write(field); err != nil {
 				return err
 			}
 			continue
@@ -61,13 +61,13 @@ func (w *Writer) Write(record []string) error {
 		}
 		for len(field) > 0 {
 			// Search for special characters.
-			i := strings.IndexAny(field, "\"\r\n")
+			i := bytes.IndexAny(field, "\"\r\n")
 			if i < 0 {
 				i = len(field)
 			}
 
 			// Copy verbatim everything before the special character.
-			if _, err := w.w.WriteString(field[:i]); err != nil {
+			if _, err := w.w.Write(field[:i]); err != nil {
 				return err
 			}
 			field = field[i:]
@@ -115,14 +115,14 @@ func (w *Writer) Flush() error {
 // Not quoting the empty string also makes this package match the behavior
 // of Microsoft Excel and Google Drive.
 // For Postgres, quote the data terminating string `\.`.
-func (w *Writer) fieldNeedsQuotes(field string) bool {
-	if field == "" {
+func (w *Writer) fieldNeedsQuotes(field []byte) bool {
+	if len(field) == 0 {
 		return false
 	}
-	if field == `\.` || strings.ContainsAny(field, ",\"\r\n") {
+	if bytes.Equal([]byte(`\.`), field) || bytes.ContainsAny(field, ",\"\r\n") {
 		return true
 	}
 
-	r1, _ := utf8.DecodeRuneInString(field)
+	r1, _ := utf8.DecodeRune(field)
 	return unicode.IsSpace(r1)
 }
