@@ -6,7 +6,6 @@ package csvwriter
 
 import (
 	"bufio"
-	"errors"
 	"io"
 	"strings"
 	"unicode"
@@ -19,26 +18,19 @@ import (
 // newline and uses ',' as the field delimiter. The exported fields can be
 // changed to customize the details before the first call to Write or WriteAll.
 //
-// Comma is the field delimiter.
-//
-// If UseCRLF is true, the Writer ends each output line with \r\n instead of \n.
-//
 // The writes of individual records are buffered.
 // After all data has been written, the client should call the
 // Flush method to guarantee all data has been forwarded to
 // the underlying io.Writer.  Any errors that occurred should
 // be checked by calling the Error method.
 type Writer struct {
-	Comma   rune // Field delimiter (set to ',' by NewWriter)
-	UseCRLF bool // True to use \r\n as the line terminator
-	w       *bufio.Writer
+	w *bufio.Writer
 }
 
 // NewWriter returns a new Writer that writes to w.
 func NewWriter(w io.Writer) *Writer {
 	return &Writer{
-		Comma: ',',
-		w:     bufio.NewWriter(w),
+		w: bufio.NewWriter(w),
 	}
 }
 
@@ -47,13 +39,10 @@ func NewWriter(w io.Writer) *Writer {
 // Writes are buffered, so Flush must eventually be called to ensure
 // that the record is written to the underlying io.Writer.
 func (w *Writer) Write(record []string) error {
-	if !validDelim(w.Comma) {
-		return errInvalidDelim
-	}
 
 	for n, field := range record {
 		if n > 0 {
-			if _, err := w.w.WriteRune(w.Comma); err != nil {
+			if _, err := w.w.WriteRune(','); err != nil {
 				return err
 			}
 		}
@@ -90,15 +79,9 @@ func (w *Writer) Write(record []string) error {
 				case '"':
 					_, err = w.w.WriteString(`""`)
 				case '\r':
-					if !w.UseCRLF {
-						err = w.w.WriteByte('\r')
-					}
+					err = w.w.WriteByte('\r')
 				case '\n':
-					if w.UseCRLF {
-						_, err = w.w.WriteString("\r\n")
-					} else {
-						err = w.w.WriteByte('\n')
-					}
+					err = w.w.WriteByte('\n')
 				}
 				field = field[1:]
 				if err != nil {
@@ -111,35 +94,12 @@ func (w *Writer) Write(record []string) error {
 		}
 	}
 	var err error
-	if w.UseCRLF {
-		_, err = w.w.WriteString("\r\n")
-	} else {
-		err = w.w.WriteByte('\n')
-	}
+	err = w.w.WriteByte('\n')
 	return err
 }
 
 // Flush writes any buffered data to the underlying io.Writer.
-// To check if an error occurred during the Flush, call Error.
-func (w *Writer) Flush() {
-	w.w.Flush()
-}
-
-// Error reports any error that has occurred during a previous Write or Flush.
-func (w *Writer) Error() error {
-	_, err := w.w.Write(nil)
-	return err
-}
-
-// WriteAll writes multiple CSV records to w using Write and then calls Flush,
-// returning any error from the Flush.
-func (w *Writer) WriteAll(records [][]string) error {
-	for _, record := range records {
-		err := w.Write(record)
-		if err != nil {
-			return err
-		}
-	}
+func (w *Writer) Flush() error {
 	return w.w.Flush()
 }
 
@@ -159,16 +119,10 @@ func (w *Writer) fieldNeedsQuotes(field string) bool {
 	if field == "" {
 		return false
 	}
-	if field == `\.` || strings.ContainsRune(field, w.Comma) || strings.ContainsAny(field, "\"\r\n") {
+	if field == `\.` || strings.ContainsAny(field, ",\"\r\n") {
 		return true
 	}
 
 	r1, _ := utf8.DecodeRuneInString(field)
 	return unicode.IsSpace(r1)
-}
-
-var errInvalidDelim = errors.New("csv: invalid field or comment delimiter")
-
-func validDelim(r rune) bool {
-	return r != 0 && r != '"' && r != '\r' && r != '\n' && utf8.ValidRune(r) && r != utf8.RuneError
 }
