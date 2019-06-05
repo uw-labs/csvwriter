@@ -28,9 +28,9 @@ type Writer struct {
 }
 
 // NewWriter returns a new Writer that writes to w.
-func NewWriter(w io.Writer) *Writer {
+func NewWriter(w io.Writer, bufferSize int) *Writer {
 	return &Writer{
-		w: bufio.NewWriter(w),
+		w: bufio.NewWriterSize(w, bufferSize),
 	}
 }
 
