@@ -42,7 +42,7 @@ func (w *Writer) Write(record [][]byte) error {
 
 	for n, field := range record {
 		if n > 0 {
-			if _, err := w.w.WriteRune(','); err != nil {
+			if err := w.w.WriteByte(','); err != nil {
 				return err
 			}
 		}
