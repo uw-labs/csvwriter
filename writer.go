@@ -119,8 +119,26 @@ func (w *Writer) fieldNeedsQuotes(field []byte) bool {
 	if len(field) == 0 {
 		return false
 	}
-	if bytes.Equal([]byte(`\.`), field) || bytes.ContainsAny(field, ",\"\r\n") {
-		return true
+
+	for _, c := range field {
+		if c == ',' {
+			return true
+		}
+		if c == '"' {
+			return true
+		}
+		if c == '\r' {
+			return true
+		}
+		if c == '\n' {
+			return true
+		}
+	}
+
+	if len(field) == 2 {
+		if field[0] == '\\' && field[1] == '.' {
+			return true
+		}
 	}
 
 	r1, _ := utf8.DecodeRune(field)
