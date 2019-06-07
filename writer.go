@@ -128,14 +128,16 @@ func (w *Writer) fieldNeedsQuotes(field []byte) bool {
 		}
 	}
 
+	first := field[0]
+
 	if l == 2 {
-		if field[0] == '\\' && field[1] == '.' {
+		if first == '\\' && field[1] == '.' {
 			return true
 		}
 	}
 
-	if field[0] < utf8.RuneSelf {
-		if asciiSpace[field[0]] == 1 {
+	if first < utf8.RuneSelf {
+		if asciiSpace[first] == 1 {
 			return true
 		}
 	} else {
