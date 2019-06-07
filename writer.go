@@ -116,7 +116,9 @@ func (w *Writer) Flush() error {
 // of Microsoft Excel and Google Drive.
 // For Postgres, quote the data terminating string `\.`.
 func (w *Writer) fieldNeedsQuotes(field []byte) bool {
-	if len(field) == 0 {
+	l := len(field)
+
+	if l == 0 {
 		return false
 	}
 
@@ -126,7 +128,7 @@ func (w *Writer) fieldNeedsQuotes(field []byte) bool {
 		}
 	}
 
-	if len(field) == 2 {
+	if l == 2 {
 		if field[0] == '\\' && field[1] == '.' {
 			return true
 		}
