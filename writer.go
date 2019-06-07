@@ -132,8 +132,19 @@ func (w *Writer) fieldNeedsQuotes(field []byte) bool {
 		}
 	}
 
-	r1, _ := utf8.DecodeRune(field)
-	return unicode.IsSpace(r1)
+	if field[0] < utf8.RuneSelf {
+		if asciiSpace[field[0]] == 1 {
+			return true
+		}
+	} else {
+		r1, _ := utf8.DecodeRune(field)
+		if unicode.IsSpace(r1) {
+			return true
+		}
+	}
+
+	return false
 }
 
+var asciiSpace = [256]uint8{'\t': 1, '\n': 1, '\v': 1, '\f': 1, '\r': 1, ' ': 1}
 var special = [256]uint8{',': 1, '"': 1, '\r': 1, '\n': 1}
