@@ -121,16 +121,7 @@ func (w *Writer) fieldNeedsQuotes(field []byte) bool {
 	}
 
 	for _, c := range field {
-		if c == ',' {
-			return true
-		}
-		if c == '"' {
-			return true
-		}
-		if c == '\r' {
-			return true
-		}
-		if c == '\n' {
+		if special[c] == 1 {
 			return true
 		}
 	}
@@ -144,3 +135,5 @@ func (w *Writer) fieldNeedsQuotes(field []byte) bool {
 	r1, _ := utf8.DecodeRune(field)
 	return unicode.IsSpace(r1)
 }
+
+var special = [256]uint8{',': 1, '"': 1, '\r': 1, '\n': 1}
